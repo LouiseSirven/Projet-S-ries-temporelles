@@ -131,6 +131,43 @@ estim <- ma2; AIC(estim); BIC(estim)
 
 # On choisit le MA(2).
 
+#Blancheur des résidus
+ma2 <- arima(dxm,order=c(0,0,2))
+par(mfrow=c(1,1))
+acf(ma2$residuals,50, main="")
+par(mfrow=c(1,1),mar=c(2,2,2,2))
+plot(ma2$residuals)
+
+#QQplot, normalité des résidus
+qqnorm(ma2$residuals, pch = 1, frame = FALSE)#plot QQtest
+qqline(ma2$residuals, col = "steelblue", lwd = 2)#QQPlot théorique
+shapiro.test(ma2$residuals) #Résidus ne suivent pas loi normale
+jarque.bera.test(ma2$residuals) #Résidus ne suivent pas loi normale
+
+##Prédictions
+pdates <- as.yearmon(seq(from=2001+1/12,to=2022+1/12,by=1/12))
+dT <- T-1
+ma2p <- zoo(predict(ma2)$pred, order.by = pdates)
+obs <- dxm[(dT-3):dT]
+ma2pp <- ma2p[(dT-3):dT]
+plot(obs)
+plot(ma2pp)
+pred <- cbind(obs, "ma2"=ma2pp)
+par(mfrow=c(1,1),mar=c(0,0,1,1)) 
+plot(pred)
+par(mfrow=c(1,1),mar=c(1,1,1,1)) 
+plot(dxm)
+print(ma2)
+type(ma2)
+print(ma2p)
+############################################
+############################################
+
+
+
+ma2p <- zoo(predict(ma2)$pred, order.by = pdates)
+plot(ma2p)
+
 #### Q7 ####
 ma2p <- zoo(predict(ma2,4)$pred)
 plot(ma2p)
@@ -140,8 +177,9 @@ pred <- cbind(obs, "arma31"=arma31p, "ma2"=arma12p)
 sqrt(sum((ar3p-obs)^2)/4)
 sqrt(sum((ma2p-obs)^2)/4)
 sd(obs)
-############################################
-############################################
+
+
+
 #test avec librairie forecast
 library(forecast)
 
