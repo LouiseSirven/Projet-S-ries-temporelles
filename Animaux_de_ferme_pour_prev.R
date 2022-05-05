@@ -178,11 +178,18 @@ par(mfrow=c(1,1),mar=c(1,1,1,1))
 #test avec librairie forecast
 library(forecast)
 install.packages('forecast', dependencies = TRUE)
-auto <- auto.arima(dxm,stepwise=FALSE,approx=FALSE, max.P = 0, max.Q =0)
+auto <- auto.arima(dxm,stepwise=FALSE,approx=FALSE, max.P = 4, max.Q =2)
 fcast <- forecast(auto)
+print(auto)
 plot(fcast)
 
+#test avec librairie forecast
+auto <- auto.arima(xm,stepwise=FALSE,approx=FALSE, max.P = 4, max.Q =2)
+fcast <- forecast(auto)
+print(auto)
+plot(fcast)
 
+pred <- predict(ma2, 4)
 ############################################
 ############################################
 
