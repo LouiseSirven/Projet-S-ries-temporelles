@@ -19,11 +19,10 @@ dates_char = as.character(data$Date)
 dates_char[1];dates_char[length(dates_char)] #affiche la première et la dernière date
 dates <- as.yearmon(seq(from=2001,to=2022+1/12,by=1/12))
 
-#Tri de la série par date croissante
+#Tri de la série par date croissante et retrait des dernières valeurs pour la prévision
 data<-data[order(data$Date,decreasing=FALSE),] 
 xm <- zoo(data$Indice, order.by = dates)
 T <- length(xm)-1
-##Xt.ts<-ts(data$Indice, start=c(2001,1), end=c(2022,2), frequency = 12)
 
 #représentation graphique
 dev.off()
@@ -34,7 +33,8 @@ acf(xm)
 
 #stationnarisation de la série
 acf(xm) #autocorrélogramme série brute
-dxm <- diff(xm,1)#série sans la tendance
+dxm.source <- diff(xm,1)#série sans la tendance
+dxm <- dxm.source[1:(T-4)] #on supprime les 4 dernières valeurs
 ##dXt.ts <- diff(Xt.ts,1)
 plot(dxm, xlab='Date')
 decompose(xm,type="additive")
@@ -129,35 +129,48 @@ estim <- arma11; AIC(estim); BIC(estim)
 estim <- ar3; AIC(estim); BIC(estim)
 estim <- ma2; AIC(estim); BIC(estim)
 
-# On choisit le MA(2).
+# On choisit ARMA(3,1) et MA(2).
 
 #Blancheur des résidus
+#MA(2)
 ma2 <- arima(dxm,order=c(0,0,2))
 par(mfrow=c(1,1))
 acf(ma2$residuals,50, main="")
 par(mfrow=c(1,1),mar=c(2,2,2,2))
 plot(ma2$residuals)
+#ARMA31
+arma31 <- arima(dxm,order=c(3,0,1))
+par(mfrow=c(1,1))
+acf(arma31$residuals,50, main="")
+par(mfrow=c(1,1),mar=c(2,2,2,2))
+plot(arma31$residuals)
 
 #QQplot, normalité des résidus
+#MA2
 qqnorm(ma2$residuals, pch = 1, frame = FALSE)#plot QQtest
 qqline(ma2$residuals, col = "steelblue", lwd = 2)#QQPlot théorique
 shapiro.test(ma2$residuals) #Résidus ne suivent pas loi normale
 jarque.bera.test(ma2$residuals) #Résidus ne suivent pas loi normale
 
+#ARMA31
+qqnorm(arma31$residuals, pch = 1, frame = FALSE)#plot QQtest
+qqline(arma31$residuals, col = "steelblue", lwd = 2)#QQPlot théorique
+shapiro.test(arma31$residuals) #Résidus ne suivent pas loi normale
+jarque.bera.test(arma31$residuals) #Résidus ne suivent pas loi normale
+
 ##Prédictions
 #pdates <- as.yearmon(seq(from=2001+1/12,to=2022+1/12,by=1/12))
-pdates <- as.yearmon(seq(from=2022+2/12,to=2022+5/12,by=1/12))
+pdates <- as.yearmon(seq(from=2021+10/12,to=2022+1/12,by=1/12))
 arma31p <- zoo(predict(arma31, 4)$pred, order.by = pdates)
 arma11p <- zoo(predict(arma11, 4)$pred, order.by = pdates)
 ar3p <- zoo(predict(ar3, 4)$pred, order.by = pdates)
 ma2p <- zoo(predict(ma2, 4)$pred, order.by = pdates)
-plot(ma2p)
-obs <- dxm[(T-3):T]
+#plot(ma2p)
+obs <- dxm.source[(T-3):T]
 plot(obs)
-#plot(ma2pp)
-pred <- cbind("ma2"=ma2p, "ar3"=ar3p, "arma31"=arma31p, "arma11"=arma11p)
+pred <- cbind("obs"=obs, "ma2"=ma2p, "ar3"=ar3p, "arma31"=arma31p, "arma11"=arma11p)
 par(mfrow=c(1,1),mar=c(0,0,2,2)) 
-plot(pred) 
+plot(pred) #C'est l'AR3 qui paraît le mieux.
 par(mfrow=c(1,1),mar=c(1,1,1,1)) 
 #plot(ma2) #inverse des racines
 
@@ -174,14 +187,8 @@ plot(fcast)
 ############################################
 
 
-
-ma2p <- zoo(predict(ma2)$pred, order.by = pdates)
-plot(ma2p)
-
 #### Q7 ####
 ma2p <- zoo(predict(ma2,4)$pred)
-plot(ma2p)
-obs <- dxm[(T-3):T]
 pred <- cbind(obs, "arma31"=arma31p, "ma2"=arma12p)
 
 sqrt(sum((ar3p-obs)^2)/4)
